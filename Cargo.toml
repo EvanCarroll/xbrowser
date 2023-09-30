@@ -1,0 +1,19 @@
+[package]
+name = "browser_cookie"
+version = "0.1.0"
+edition = "2021"
+authors = "Evan Carroll <me@evancarroll.com>"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aes = "0.8.3"
+cbc = "0.1.2"
+chrono = "0.4.31"
+cipher = "0.4.4"
+clap = { version = "4.4.6", features = ["derive", "env"] }
+derive_builder = "0.12.0"
+num_enum = "0.7.0"
+pbkdf2 = "0.12.2"
+sha1 = "0.10.6"
+sqlite = "0.31.1"
