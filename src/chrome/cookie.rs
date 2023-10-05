@@ -1,10 +1,11 @@
 use num_enum::{IntoPrimitive, FromPrimitive};
-
 use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
 
 mod error;
 use error::CookieError;
+use browser_cookie::*;
+use super::Chrome;
 
 /// Rust port of GenerateEncryptionKey
 /// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;bpv=1;bpt=1
@@ -70,7 +71,6 @@ impl crate::cookiejar::Cookie for Cookie {
 		self.value.clone()
 			.unwrap_or( self.decrypt().unwrap_or("".to_string()) )
 	}
-
 }
 
 impl Cookie {
@@ -116,5 +116,62 @@ impl Cookie {
 				CookieError::Unsupported(other.to_string(), self.name.clone())
 			)
 		}
+	}
+}
+
+
+impl TryFrom<sqlite::Row> for Cookie {
+	type Error = CookieError;
+	fn try_from( row: sqlite::Row ) -> Result<Cookie, Self::Error> {
+		let mut cb = CookieBuilder::default();
+		cb.name( row.read::<&str, _>("name").to_string() );
+		cb.encrypted_value( read_vecu8(&row, "encrypted_value") );
+		cb.path( read_string(&row, "path") );
+		cb.is_secure( read_bool(&row, "is_secure") );
+		cb.is_httponly( read_bool(&row, "is_httponly") );
+		cb.has_expires( read_bool(&row, "has_expires") );
+		cb.is_persistent( read_bool(&row, "is_persistent") );
+		cb.is_same_party( read_bool(&row, "is_same_party") );
+		cb.priority( read_int(&row, "priority") );
+		cb.samesite( (read_int(&row, "samesite") as i8).into() );
+		cb.source_scheme( (read_int(&row, "source_scheme") as u8).into() );
+
+		// Store as Option where "" is None
+		cb.value( Some(read_string(&row, "value")).filter(|s| !s.is_empty()) );
+		cb.source_port( read_int(&row, "source_port") as u32 );
+
+		{
+			let ts = read_int(&row, "creation_utc");
+			cb.creation_utc( Chrome::from_epoch(ts).unwrap() );
+		}
+		
+		{
+			let ts = read_int(&row, "last_access_utc");
+			cb.last_access_utc( Chrome::from_epoch(ts).unwrap() );
+		}
+		
+		{
+			let ts = read_int(&row, "last_update_utc");
+			cb.last_update_utc( Chrome::from_epoch(ts).unwrap() );
+		}
+		
+		{
+			let ts = read_int(&row, "expires_utc");
+			cb.expires_utc( Chrome::from_epoch(ts) );
+		}
+
+
+		let cookie = cb.build().unwrap();
+		
+		// If has_expires is set, ensure that expires_utc is also set
+		if cookie.has_expires {
+			assert!(matches!( cookie.expires_utc, Some(_) ));
+		}
+		// If has_expires is *NOT* set, ensure that expires_utc is also NOT set
+		else {
+			assert!(matches!( cookie.expires_utc, None ));
+		}
+
+		Ok(cookie)
 	}
 }

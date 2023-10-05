@@ -1,21 +1,22 @@
-#![feature(split_array)]
+#![feature(split_array,never_type)]
 #[macro_use]
 extern crate derive_builder;
 
+use browser_cookie::*;
 mod chrome;
+mod firefox;
 mod cookiejar;
 
-use clap::{Parser, Subcommand, ValueEnum};
-use std::path::PathBuf;
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-struct Cli {
-	#[arg(value_enum, long)]
+struct Args {
+	#[arg(value_enum, long, default_value = "linux")]
 	os: Os,
 
 	#[arg(short, long, default_value = "chromium")]
-	browser: Browsers,
+	browser: Browser,
 	
 	#[arg(short, long, env)]
 	user: String,
@@ -24,33 +25,34 @@ struct Cli {
 	domain: String,
 }
 
-fn main() {
-	let cli = Cli::parse();
-	let path = build_path( cli.os, &cli.user, None );
-	let jar = chrome::get_cookies(&path, &cli.domain );
-	println!("{}", jar);
-}
-
-#[derive(PartialEq, Debug, Clone, ValueEnum)]
-enum Os { Win, Linux, Osx }
-
-#[derive(PartialEq, Debug, Clone, ValueEnum)]
-enum Browsers { Chrome, Chromium, Firefox, Safari }
-
-/// Path to sql lite database
-fn build_path( os: Os, user: &str, profile: Option<&str> ) -> PathBuf {
-	match os {
-		Os::Linux => {
-			let mut p = PathBuf::new();
-			p.push( "/" );
-			p.push( "home" );
-			p.push( user );
-			p.push( ".config" );
-			p.push( "chromium" );
-			p.push( profile.unwrap_or("Default") );
-			p.push( "Cookies" );
-			p
+impl From<Args> for Env {
+	fn from( args: Args ) -> Self {
+		Self {
+			os: args.os,
+			browser: args.browser,
+			user: args.user,
 		}
-		_ => todo!("Other OSes")
 	}
 }
+
+fn main() {
+	let args = Args::parse();
+	let domain = args.domain.clone();
+	let env: Env = args.into();
+
+	match env.browser {
+		Browser::Chromium | Browser::Chrome => {
+			let browser = chrome::ChromeBuilder::default().env(env).build().unwrap();
+			let jar = browser.get_cookies( &domain );
+			println!("{}", jar)
+		}
+		Browser::Firefox => {
+			let browser = firefox::FirefoxBuilder::default().env(env).build().unwrap();
+			let jar = browser.get_cookies( &domain );
+			println!("{}", jar)
+		}
+		_ => todo!( "Chill cowboy, soon enough" )
+	}
+	
+}
+

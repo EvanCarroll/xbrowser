@@ -2,7 +2,7 @@
 name = "browser_cookie"
 version = "0.1.0"
 edition = "2021"
-authors = "Evan Carroll <me@evancarroll.com>"
+authors = ["Evan Carroll <me@evancarroll.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,5 +15,6 @@ clap = { version = "4.4.6", features = ["derive", "env"] }
 derive_builder = "0.12.0"
 num_enum = "0.7.0"
 pbkdf2 = "0.12.2"
+rust-ini = "0.19.0"
 sha1 = "0.10.6"
 sqlite = "0.31.1"
