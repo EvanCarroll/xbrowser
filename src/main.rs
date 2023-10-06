@@ -51,7 +51,7 @@ fn main() {
 			let jar = browser.get_cookies( &domain );
 			println!("{}", jar)
 		}
-		_ => todo!( "Chill cowboy, soon enough" )
+		other => todo!( "Chill cowboy, the requested browser isn't implemented yet" )
 	}
 	
 }

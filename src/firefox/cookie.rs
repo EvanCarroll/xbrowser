@@ -2,8 +2,8 @@ use chrono::{DateTime, offset::Utc};
 use sqlite::State;
 use crate::cookiejar::CookieJar;
 
-use browser_cookie::*;
 use super::Firefox;
+use browser_cookie::*;
 
 #[derive(Debug, Builder)]
 pub struct Cookie {
@@ -30,37 +30,37 @@ impl crate::cookiejar::Cookie for Cookie {
 }
 
 impl TryFrom<sqlite::Row> for Cookie {
-	type Error = CookieError;
+	type Error = browser_cookie::CookieError;
 	fn try_from( row: sqlite::Row ) -> Result<Cookie, Self::Error> {
 		let mut cb = CookieBuilder::default();
-		cb.id( read_int(&row, "id") as u64 );
-		cb.origin_attributes( read_string(&row, "originAttributes") );
-		cb.name( read_string(&row, "name") );
-		cb.value( read_string(&row, "value") );
-		cb.host( read_string(&row, "host") );
-		cb.path( read_string(&row, "path") );
+		cb.id( read_int(&row, "id")? as u64 );
+		cb.origin_attributes( read_string(&row, "originAttributes")? );
+		cb.name( read_string(&row, "name")? );
+		cb.value( read_string(&row, "value")? );
+		cb.host( read_string(&row, "host")? );
+		cb.path( read_string(&row, "path")? );
 
 		{
-			let secs = read_int(&row, "expiry") as i64;
+			let secs = read_int(&row, "expiry")? as i64;
 			let ts = Firefox::from_epoch_seconds(secs).unwrap();
 			cb.expiry( ts );
 		}
 		{
-			let msecs = read_int(&row, "lastAccessed") as i64;
+			let msecs = read_int(&row, "lastAccessed")? as i64;
 			let ts = Firefox::from_epoch_microseconds(msecs).unwrap();
 			cb.last_accessed( ts );
 		}
 		{
-			let msecs = read_int(&row, "creationTime") as i64;
+			let msecs = read_int(&row, "creationTime")? as i64;
 			let ts = Firefox::from_epoch_microseconds(msecs).unwrap();
 			cb.creation_time( ts );
 		}
-		cb.is_secure( read_bool(&row, "isSecure") );
-		cb.is_http_only( read_bool(&row, "isHttpOnly") );
-		cb.in_browser_element( read_bool(&row, "inBrowserElement") );
-		cb.same_site( read_bool(&row, "sameSite") );
-		cb.raw_same_site( read_bool(&row, "rawSameSite") );
-		cb.scheme_map( read_bool(&row, "schemeMap") );
+		cb.is_secure( read_bool(&row, "is_Secure")? );
+		cb.is_http_only( read_bool(&row, "isHttpOnly")? );
+		cb.in_browser_element( read_bool(&row, "inBrowserElement")? );
+		cb.same_site( read_bool(&row, "sameSite")? );
+		cb.raw_same_site( read_bool(&row, "rawSameSite")? );
+		cb.scheme_map( read_bool(&row, "schemeMap")? );
 
 		let cookie = cb.build().unwrap();
 

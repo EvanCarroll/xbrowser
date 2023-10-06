@@ -3,7 +3,6 @@ use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
 
 mod error;
-use error::CookieError;
 use browser_cookie::*;
 use super::Chrome;
 
@@ -126,40 +125,39 @@ impl TryFrom<sqlite::Row> for Cookie {
 		let mut cb = CookieBuilder::default();
 		cb.name( row.read::<&str, _>("name").to_string() );
 		cb.encrypted_value( read_vecu8(&row, "encrypted_value") );
-		cb.path( read_string(&row, "path") );
-		cb.is_secure( read_bool(&row, "is_secure") );
-		cb.is_httponly( read_bool(&row, "is_httponly") );
-		cb.has_expires( read_bool(&row, "has_expires") );
-		cb.is_persistent( read_bool(&row, "is_persistent") );
-		cb.is_same_party( read_bool(&row, "is_same_party") );
-		cb.priority( read_int(&row, "priority") );
-		cb.samesite( (read_int(&row, "samesite") as i8).into() );
-		cb.source_scheme( (read_int(&row, "source_scheme") as u8).into() );
+		cb.path( read_string(&row, "path")? );
+		cb.is_secure( read_bool(&row, "is_secure")? );
+		cb.is_httponly( read_bool(&row, "is_httponly")? );
+		cb.has_expires( read_bool(&row, "has_expires")? );
+		cb.is_persistent( read_bool(&row, "is_persistent")? );
+		cb.is_same_party( read_bool(&row, "is_same_party")? );
+		cb.priority( read_int(&row, "priority")? );
+		cb.samesite( (read_int(&row, "samesite")? as i8).into() );
+		cb.source_scheme( (read_int(&row, "source_scheme")? as u8).into() );
 
 		// Store as Option where "" is None
-		cb.value( Some(read_string(&row, "value")).filter(|s| !s.is_empty()) );
-		cb.source_port( read_int(&row, "source_port") as u32 );
+		cb.value( Some(read_string(&row, "value")?).filter(|s| !s.is_empty()) );
+		cb.source_port( read_int(&row, "source_port")? as u32 );
 
 		{
-			let ts = read_int(&row, "creation_utc");
+			let ts = read_int(&row, "creation_utc")?;
 			cb.creation_utc( Chrome::from_epoch(ts).unwrap() );
 		}
 		
 		{
-			let ts = read_int(&row, "last_access_utc");
+			let ts = read_int(&row, "last_access_utc")?;
 			cb.last_access_utc( Chrome::from_epoch(ts).unwrap() );
 		}
 		
 		{
-			let ts = read_int(&row, "last_update_utc");
+			let ts = read_int(&row, "last_update_utc")?;
 			cb.last_update_utc( Chrome::from_epoch(ts).unwrap() );
 		}
 		
 		{
-			let ts = read_int(&row, "expires_utc");
+			let ts = read_int(&row, "expires_utc")?;
 			cb.expires_utc( Chrome::from_epoch(ts) );
 		}
-
 
 		let cookie = cb.build().unwrap();
 		

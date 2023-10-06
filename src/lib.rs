@@ -30,17 +30,19 @@ impl Env {
 	}
 }
 
-pub fn read_bool( row: &sqlite::Row, col: &str ) -> bool {
-	let res = row.read::<i64, _>(col);
-	res != 0
+pub fn read_bool( row: &sqlite::Row, col: &str ) -> Result<bool, CookieError> {
+	let val = row.try_read::<i64, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
+	Ok(val != 0)
 }
 
-pub fn read_int( row: &sqlite::Row, col: &str ) -> i64 {
-	row.read::<i64, _>(col)
+pub fn read_int( row: &sqlite::Row, col: &str ) -> Result<i64, CookieError> {
+	let val = row.try_read::<i64, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
+	Ok(val)
 }
 
-pub fn read_string( row: &sqlite::Row, col: &str ) -> String {
-	row.read::<&str, _>(col).to_string()
+pub fn read_string( row: &sqlite::Row, col: &str ) -> Result<String, CookieError> {
+	let val = row.try_read::<&str, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
+	Ok( val.to_string() )
 }
 
 pub fn read_vecu8( row: &sqlite::Row, col: &str ) -> Vec<u8> {
@@ -53,4 +55,5 @@ pub enum CookieError {
 	NoValue(String),
 	Unsupported(String, String),
 	Egress,
+	SqliteInterface(sqlite::Error)
 }
