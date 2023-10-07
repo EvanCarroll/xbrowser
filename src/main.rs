@@ -13,15 +13,27 @@ use clap::Parser;
 #[command(author, version, about, long_about = None)]
 struct Args {
 	#[arg(value_enum, long, default_value = "linux")]
+	/// Browser operating system which created the profile
 	os: Os,
 
 	#[arg(short, long, default_value = "chromium")]
 	browser: Browser,
+
+	#[arg(short, long)]
+	/// Name of the profile in the browser
+	profile: Option<String>,
+	
+	#[arg(long)]
+	/// Parent directory of the profile data
+	path_config: Option<String>,
 	
 	#[arg(short, long, env)]
+	/// User's home directory, used to compute a default path to your
+	/// browser's config. Defaults to the ENV{USER}
 	user: String,
 	
 	#[arg(short, long)]
+	/// Domain you wish you to query
 	domain: String,
 }
 
@@ -38,16 +50,27 @@ impl From<Args> for Env {
 fn main() {
 	let args = Args::parse();
 	let domain = args.domain.clone();
+	let profile = args.profile.clone();
+	let path_config = args.path_config.clone();
 	let env: Env = args.into();
 
 	match env.browser {
 		Browser::Chromium | Browser::Chrome => {
-			let browser = chrome::ChromeBuilder::default().env(env).build().unwrap();
+			let mut builder = chrome::ChromeBuilder::default();
+			builder.env(env);
+			builder.profile(profile);
+			if let Some(path) = path_config {
+				builder.path_config(Some(path.as_str().into()));
+			}
+			let browser = builder.build().unwrap();
 			let jar = browser.get_cookies( &domain );
 			println!("{}", jar)
 		}
 		Browser::Firefox => {
-			let browser = firefox::FirefoxBuilder::default().env(env).build().unwrap();
+			let mut builder = firefox::FirefoxBuilder::default();
+			builder.env(env);
+			builder.profile(profile);
+			let browser = builder.build().unwrap();
 			let jar = browser.get_cookies( &domain );
 			println!("{}", jar)
 		}

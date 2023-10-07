@@ -8,16 +8,17 @@ mod cookie;
 pub struct Chrome {
 	env: Env,
 	#[builder(default)]
-	path_profile: Option<PathBuf>
+	profile: Option<String>,
+	#[builder(default)]
+	path_config: Option<PathBuf>,
 }
 
 impl Chrome {
 	pub fn get_cookies(&self, domain: &str) -> CookieJar {
-		let mut path = self.path_profile.clone()
-			.unwrap_or_else(|| self.default_profile_path() );
+		let mut path = self.path_profile();
 		path.push("Cookies");
 
-		let con = sqlite::Connection::open(path)
+		let con = sqlite::Connection::open(&path)
 			.unwrap();
 
 		const Q: &'static str = r##"
@@ -26,8 +27,8 @@ impl Chrome {
 			WHERE host_key = ?;
 		"##;
 
-		let mut statement = con.prepare(Q).unwrap();
-
+		let mut statement = con.prepare(Q)
+			.expect(&format!("Error preparing statement with {:?}", &path.clone().as_os_str()));
 		statement.bind((1,domain)).unwrap();
 
 		let mut jar = CookieJar::default();
@@ -42,21 +43,21 @@ impl Chrome {
 
 
 	fn path_root(&self) -> PathBuf {
-		let mut p = self.env.home_path();
-		p.push( ".config" );
-		p.push( "chromium" );
-		p
+		let p = self.path_config.clone().unwrap_or_else( || {
+			let mut p = self.env.path_home();
+			p.push( ".config" );
+			p.push( "chromium" );
+			p
+		} );
+		p.to_path_buf()
 	}
 
-	fn default_profile_path( &self ) -> PathBuf {
-		match self.env.os {
-			Os::Linux => {
-				let mut p = self.path_root();
-				p.push( "Default" );
-				p
-			}
-			_ => todo!("Other OSes")
-		}
+	fn path_profile( &self ) -> PathBuf {
+		let profile_name = self.profile.clone()
+			.unwrap_or_else( || "Default".to_owned() );
+		let mut p = self.path_root();
+		p.push( profile_name );
+		p
 	}
 
 }

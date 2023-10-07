@@ -16,7 +16,7 @@ pub struct Env {
 }
 
 impl Env {
-	pub fn home_path( &self ) -> PathBuf {
+	pub fn path_home( &self ) -> PathBuf {
 		match self.os {
 			Os::Linux => {
 				let mut p = PathBuf::new();
