@@ -57,3 +57,8 @@ pub enum CookieError {
 	Egress,
 	SqliteInterface(sqlite::Error)
 }
+
+pub trait Cookie: std::fmt::Debug {
+	fn name(&self) -> String;	
+	fn value(&self) -> String;	
+}

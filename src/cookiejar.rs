@@ -1,9 +1,5 @@
 use std::fmt;
-
-pub trait Cookie: std::fmt::Debug {
-	fn name(&self) -> String;	
-	fn value(&self) -> String;	
-}
+use crate::*;
 
 #[derive(Default, Debug)]
 pub struct CookieJar {

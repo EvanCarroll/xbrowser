@@ -7,7 +7,7 @@ mod chrome;
 mod firefox;
 mod cookiejar;
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -51,8 +51,7 @@ fn main() {
 			let jar = browser.get_cookies( &domain );
 			println!("{}", jar)
 		}
-		other => todo!( "Chill cowboy, the requested browser isn't implemented yet" )
+		_ => todo!( "Chill cowboy, the requested browser isn't implemented yet" )
 	}
 	
 }
-

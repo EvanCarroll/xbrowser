@@ -1,6 +1,4 @@
 use std::path::PathBuf;
-use chrono::{DateTime, offset::Utc};
-use sqlite::State;
 use crate::cookiejar::CookieJar;
 
 use browser_cookie::*;
@@ -35,30 +33,13 @@ impl Chrome {
 		let mut jar = CookieJar::default();
 		for row in statement.iter() {
 			let row = row.unwrap();
-			let cookie: cookie::Cookie = row.try_into().unwrap();
+			let cookie: cookie::ChromeCookie = row.try_into().unwrap();
 			jar.add_cookie(cookie.name.clone(), Box::new(cookie));
 		}
 
 		jar
 	}
 
-
-	/// Convert from MS since 1601-01-01 to DateTime
-	fn from_epoch( ts: i64 ) -> Option< DateTime<chrono::offset::Utc> > {
-
-		if ts == 0 {
-			return None
-		}
-
-		// Chrome Epoch is in 1601-01-01.. snowflake garbage
-		// https://source.chromium.org/chromium/chromium/src/+/main:base/time/time.h;l=529;drc=131600edcd9395ffa1241050c486e8da3fbfda4f
-		const UNIX_EPOCH_OFFSET: i64 = 11644473600;
-
-		DateTime::from_timestamp(
-			(ts / 1000000) - UNIX_EPOCH_OFFSET,
-			0,
-		)
-	}
 
 	fn path_root(&self) -> PathBuf {
 		let mut p = self.env.home_path();

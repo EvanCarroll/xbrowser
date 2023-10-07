@@ -8,6 +8,7 @@ authentication is done online and requires JavaScript.
 Currently we have the ability to 
 
 * Decode v10 Chrome Cookies as used in Linux
+* Dump Firefox cookies in Linux
 
 This will be expanded to support all browsers, on Windows, Linux, and OSX.
 
@@ -31,10 +32,9 @@ cargo install --path .
 Similar Works
 ----
 
-* [Hack Browser Data](https://github.com/moonD4rk/HackBrowserData.git)
-* [Browser Cookie](https://github.com/richardpenman/browsercookie)
-* [Browser Cookie 3](https://github.com/borisbabic/browser_cookie3)
-* [PyCookieCheat](https://github.com/n8henrie/pycookiecheat)
+* [Hack Browser Data](https://github.com/moonD4rk/HackBrowserData.git) a purely exfiltration tool written in Go.
+* [PyCookieCheat](https://github.com/n8henrie/pycookiecheat) Python full featured cookie dump
+* [Browser Cookie](https://github.com/richardpenman/browsercookie) **UNMAINTAINED** the first MVP in Python, forked to [Browser Cookie 3](https://github.com/borisbabic/browser_cookie3) for modern development.
 
 ----
 

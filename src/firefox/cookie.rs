@@ -1,12 +1,9 @@
 use chrono::{DateTime, offset::Utc};
-use sqlite::State;
-use crate::cookiejar::CookieJar;
 
-use super::Firefox;
 use browser_cookie::*;
 
 #[derive(Debug, Builder)]
-pub struct Cookie {
+pub struct FirefoxCookie {
 	pub id: u64,
 	pub origin_attributes: String,
 	pub name: String,
@@ -24,15 +21,15 @@ pub struct Cookie {
 	pub scheme_map: bool,
 }
 
-impl crate::cookiejar::Cookie for Cookie {
+impl crate::Cookie for FirefoxCookie {
 	fn name (&self) -> String { self.name.clone() }
 	fn value (&self) -> String { self.value.clone() }
 }
 
-impl TryFrom<sqlite::Row> for Cookie {
+impl TryFrom<sqlite::Row> for FirefoxCookie {
 	type Error = browser_cookie::CookieError;
-	fn try_from( row: sqlite::Row ) -> Result<Cookie, Self::Error> {
-		let mut cb = CookieBuilder::default();
+	fn try_from( row: sqlite::Row ) -> Result<FirefoxCookie, Self::Error> {
+		let mut cb = FirefoxCookieBuilder::default();
 		cb.id( read_int(&row, "id")? as u64 );
 		cb.origin_attributes( read_string(&row, "originAttributes")? );
 		cb.name( read_string(&row, "name")? );
@@ -42,17 +39,17 @@ impl TryFrom<sqlite::Row> for Cookie {
 
 		{
 			let secs = read_int(&row, "expiry")? as i64;
-			let ts = Firefox::from_epoch_seconds(secs).unwrap();
+			let ts = from_epoch_seconds(secs).unwrap();
 			cb.expiry( ts );
 		}
 		{
 			let msecs = read_int(&row, "lastAccessed")? as i64;
-			let ts = Firefox::from_epoch_microseconds(msecs).unwrap();
+			let ts = from_epoch_microseconds(msecs).unwrap();
 			cb.last_accessed( ts );
 		}
 		{
 			let msecs = read_int(&row, "creationTime")? as i64;
-			let ts = Firefox::from_epoch_microseconds(msecs).unwrap();
+			let ts = from_epoch_microseconds(msecs).unwrap();
 			cb.creation_time( ts );
 		}
 		cb.is_secure( read_bool(&row, "is_Secure")? );
@@ -68,4 +65,20 @@ impl TryFrom<sqlite::Row> for Cookie {
 	}
 }
 
+/// Used only in expiry
+/// http://fileformats.archiveteam.org/wiki/Firefox_cookie_database
+fn from_epoch_seconds( ts: i64 ) -> Option< DateTime<chrono::offset::Utc> > {
+	if ts == 0 {
+		return None
+	}
+	DateTime::from_timestamp( ts, 0 )
+}
 
+/// Used in last_accessed, and creation_time
+/// http://fileformats.archiveteam.org/wiki/Firefox_cookie_database
+fn from_epoch_microseconds( ts: i64 ) -> Option< DateTime<chrono::offset::Utc> > {
+	if ts == 0 {
+		return None
+	}
+	DateTime::from_timestamp( ts/1000000, 0 )
+}

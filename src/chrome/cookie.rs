@@ -2,13 +2,12 @@ use num_enum::{IntoPrimitive, FromPrimitive};
 use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
 
-mod error;
 use browser_cookie::*;
-use super::Chrome;
 
 /// Rust port of GenerateEncryptionKey
 /// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;bpv=1;bpt=1
-fn get_key () -> [u8; 16] {
+// Can't be made const.. yet! https://github.com/rust-lang/rust/issues/57349
+fn get_key() -> [u8; 16] {
 	use pbkdf2::pbkdf2_hmac;
 	use sha1::Sha1;
 	const PASSWORD: &[u8; 7] = b"peanuts";
@@ -18,6 +17,8 @@ fn get_key () -> [u8; 16] {
 	pbkdf2_hmac::<Sha1>(PASSWORD, SALT, ITER, &mut key);
 	key
 }
+
+// const VERSION_10_KEY: [u8;16] = get_key();
 
 #[derive(Debug, Clone, IntoPrimitive, FromPrimitive)]
 #[repr(u8)]
@@ -44,7 +45,7 @@ pub enum CookieSameSite {
 }
 
 #[derive(Debug, Builder)]
-pub struct Cookie {
+pub struct ChromeCookie {
 	pub name: String,
 	pub path: String,
 	pub value: Option<String>,
@@ -64,7 +65,7 @@ pub struct Cookie {
 	pub source_scheme: CookieSourceScheme,
 }
 
-impl crate::cookiejar::Cookie for Cookie {
+impl Cookie for ChromeCookie {
 	fn name (&self) -> String { self.name.clone() }
 	fn value (&self) -> String {
 		self.value.clone()
@@ -72,7 +73,7 @@ impl crate::cookiejar::Cookie for Cookie {
 	}
 }
 
-impl Cookie {
+impl ChromeCookie {
 	pub fn decrypt(&self) -> Result<String, CookieError> {
 		
 		if self.encrypted_value.len() == 0 {
@@ -119,10 +120,10 @@ impl Cookie {
 }
 
 
-impl TryFrom<sqlite::Row> for Cookie {
+impl TryFrom<sqlite::Row> for ChromeCookie {
 	type Error = CookieError;
-	fn try_from( row: sqlite::Row ) -> Result<Cookie, Self::Error> {
-		let mut cb = CookieBuilder::default();
+	fn try_from( row: sqlite::Row ) -> Result<ChromeCookie, Self::Error> {
+		let mut cb = ChromeCookieBuilder::default();
 		cb.name( row.read::<&str, _>("name").to_string() );
 		cb.encrypted_value( read_vecu8(&row, "encrypted_value") );
 		cb.path( read_string(&row, "path")? );
@@ -141,22 +142,22 @@ impl TryFrom<sqlite::Row> for Cookie {
 
 		{
 			let ts = read_int(&row, "creation_utc")?;
-			cb.creation_utc( Chrome::from_epoch(ts).unwrap() );
+			cb.creation_utc( from_epoch(ts).unwrap() );
 		}
 		
 		{
 			let ts = read_int(&row, "last_access_utc")?;
-			cb.last_access_utc( Chrome::from_epoch(ts).unwrap() );
+			cb.last_access_utc( from_epoch(ts).unwrap() );
 		}
 		
 		{
 			let ts = read_int(&row, "last_update_utc")?;
-			cb.last_update_utc( Chrome::from_epoch(ts).unwrap() );
+			cb.last_update_utc( from_epoch(ts).unwrap() );
 		}
 		
 		{
 			let ts = read_int(&row, "expires_utc")?;
-			cb.expires_utc( Chrome::from_epoch(ts) );
+			cb.expires_utc( from_epoch(ts) );
 		}
 
 		let cookie = cb.build().unwrap();
@@ -172,4 +173,17 @@ impl TryFrom<sqlite::Row> for Cookie {
 
 		Ok(cookie)
 	}
+}
+	
+/// Convert from MS since 1601-01-01 to DateTime
+/// https://source.chromium.org/chromium/chromium/src/+/main:base/time/time.h;l=529;drc=131600edcd9395ffa1241050c486e8da3fbfda4f
+fn from_epoch( ts: i64 ) -> Option< DateTime<chrono::offset::Utc> > {
+	if ts == 0 {
+		return None
+	}
+	const UNIX_EPOCH_OFFSET: i64 = 11644473600;
+	DateTime::from_timestamp(
+		(ts / 1000000) - UNIX_EPOCH_OFFSET,
+		0,
+	)
 }
