@@ -2,7 +2,7 @@ use chrono::{DateTime, offset::Utc};
 
 use browser_cookie::*;
 
-#[derive(Debug, Builder)]
+#[derive(Debug, Builder, PartialEq, Eq)]
 pub struct FirefoxCookie {
 	pub id: u64,
 	pub origin_attributes: String,
@@ -62,6 +62,18 @@ impl TryFrom<sqlite::Row> for FirefoxCookie {
 		let cookie = cb.build().unwrap();
 
 		Ok(cookie)
+	}
+}
+
+use std::cmp;
+impl PartialOrd for FirefoxCookie {
+	fn partial_cmp(&self, other: &Self ) -> Option<cmp::Ordering> {
+		Some(self.name().cmp( &other.name() ))
+	}
+}
+impl Ord for FirefoxCookie {
+	fn cmp(&self, other: &Self ) -> cmp::Ordering {
+		self.name().cmp( &other.name() )
 	}
 }
 

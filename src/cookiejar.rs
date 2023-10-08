@@ -1,9 +1,10 @@
 use std::fmt;
+use itertools::Itertools;
 use crate::*;
 
 #[derive(Default, Debug)]
 pub struct CookieJar {
-	_inner: std::collections::HashMap<String, Box<dyn Cookie>> 
+	_inner: std::collections::HashMap<String, Box<dyn Cookie>>
 }
 
 impl CookieJar {
@@ -16,7 +17,7 @@ impl CookieJar {
 /// https://datatracker.ietf.org/doc/html/rfc6265
 impl fmt::Display for CookieJar {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let iter = self._inner.iter();
+		let iter = self._inner.iter().sorted();
 		let mut count = iter.clone().count();
 		let mut res = Ok(());
 		for (k,v) in iter {

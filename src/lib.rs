@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use clap::ValueEnum;
+use std::cmp::Ordering;
 
 #[derive(PartialEq, Debug, Clone, Copy, ValueEnum)]
 pub enum Os { Win, Linux, Osx }
@@ -61,4 +62,25 @@ pub enum CookieError {
 pub trait Cookie: std::fmt::Debug {
 	fn name(&self) -> String;	
 	fn value(&self) -> String;	
+}
+
+
+impl Eq for dyn Cookie {}
+
+impl PartialEq for  dyn Cookie {
+    fn eq(&self, other: &Self) -> bool {
+        self.name().eq(&other.name())
+    }
+}
+
+impl PartialOrd for dyn Cookie {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.name().partial_cmp(&other.name())
+    }
+}
+
+impl Ord for dyn Cookie {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.name().cmp(&other.name())
+    }
 }
