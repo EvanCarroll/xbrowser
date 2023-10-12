@@ -69,7 +69,15 @@ impl Cookie for ChromeCookie {
 	fn name (&self) -> String { self.name.clone() }
 	fn value (&self) -> String {
 		self.value.clone()
-			.unwrap_or( self.decrypt().unwrap_or("".to_string()) )
+			.unwrap_or(
+				self.decrypt().or_else(|err| {
+					match err {
+						CookieError::NoValue(_) => Ok("".to_string()),
+						CookieError::NotEncrypted(_) => Ok("".to_string()),
+						_ => Err(err),
+					}
+				} ).expect("Error decrypting to value")
+			)
 	}
 }
 
@@ -113,7 +121,7 @@ impl ChromeCookie {
 				Ok( value.to_owned() )
 			}
 			other => Err(
-				CookieError::Unsupported(other.to_string(), self.name.clone())
+				CookieError::EncryptionError(other.to_string(), self.name.clone())
 			)
 		}
 	}

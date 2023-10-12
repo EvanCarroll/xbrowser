@@ -54,7 +54,7 @@ pub fn read_vecu8( row: &sqlite::Row, col: &str ) -> Vec<u8> {
 pub enum CookieError {
 	NotEncrypted(String),
 	NoValue(String),
-	Unsupported(String, String),
+	EncryptionError(String, String),
 	Egress,
 	SqliteInterface(sqlite::Error)
 }
