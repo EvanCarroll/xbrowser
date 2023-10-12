@@ -3,7 +3,7 @@ use crate::cookiejar::CookieJar;
 use cookie::*;
 
 mod cookie;
-use browser_cookie::*;
+use xbrowser::*;
 
 #[derive(Debug, Clone, Builder)]
 pub struct Firefox {

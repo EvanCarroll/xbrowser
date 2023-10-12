@@ -1,4 +1,4 @@
-`browser_cookie`
+`xbrowser`
 ====
 
 Read your browsers cookies from the command line! Allow easy session jacking
@@ -16,7 +16,7 @@ Synopsis
 --------
 
 ```shell
-browser_cookie --os linux --browser chrome --domain vpn.msauth.com
+xbrowser --os linux --browser chrome --domain vpn.msauth.com
 ```
 
 Installation
@@ -24,7 +24,7 @@ Installation
 
 
 ```
-git clone https://github.com/EvanCarroll/browser_cookie.git
+git clone https://github.com/EvanCarroll/xbrowser.git
 cd browser_cookie;
 cargo install --path .
 ```

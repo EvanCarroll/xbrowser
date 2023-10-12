@@ -1,6 +1,6 @@
 use chrono::{DateTime, offset::Utc};
 
-use browser_cookie::*;
+use xbrowser::*;
 
 #[derive(Debug, Builder, PartialEq, Eq)]
 pub struct FirefoxCookie {
@@ -27,7 +27,7 @@ impl crate::Cookie for FirefoxCookie {
 }
 
 impl TryFrom<sqlite::Row> for FirefoxCookie {
-	type Error = browser_cookie::CookieError;
+	type Error = xbrowser::CookieError;
 	fn try_from( row: sqlite::Row ) -> Result<FirefoxCookie, Self::Error> {
 		let mut cb = FirefoxCookieBuilder::default();
 		cb.id( read_int(&row, "id")? as u64 );

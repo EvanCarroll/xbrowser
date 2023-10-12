@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use crate::cookiejar::CookieJar;
 
-use browser_cookie::*;
+use xbrowser::*;
 mod cookie;
 
 #[derive(Debug, Clone, Builder)]

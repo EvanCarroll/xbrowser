@@ -1,5 +1,5 @@
 [package]
-name = "browser_cookie"
+name = "xbrowser"
 version = "0.1.0"
 edition = "2021"
 authors = ["Evan Carroll <me@evancarroll.com>"]

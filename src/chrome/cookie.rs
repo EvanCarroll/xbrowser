@@ -2,7 +2,7 @@ use num_enum::{IntoPrimitive, FromPrimitive};
 use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
 
-use browser_cookie::*;
+use xbrowser::*;
 
 /// Rust port of GenerateEncryptionKey
 /// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;bpv=1;bpt=1

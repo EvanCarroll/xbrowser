@@ -101,24 +101,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "browser_cookie"
-version = "0.1.0"
-dependencies = [
- "aes",
- "cbc",
- "chrono",
- "cipher",
- "clap",
- "derive_builder",
- "itertools",
- "num_enum",
- "pbkdf2",
- "rust-ini",
- "sha1",
- "sqlite",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -881,4 +863,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c2e3184b9c4e92ad5167ca73039d0c42476302ab603e2fec4487511f38ccefc"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "xbrowser"
+version = "0.1.0"
+dependencies = [
+ "aes",
+ "cbc",
+ "chrono",
+ "cipher",
+ "clap",
+ "derive_builder",
+ "itertools",
+ "num_enum",
+ "pbkdf2",
+ "rust-ini",
+ "sha1",
+ "sqlite",
 ]

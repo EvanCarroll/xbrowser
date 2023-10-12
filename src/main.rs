@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate derive_builder;
 
-use browser_cookie::*;
+use xbrowser::*;
 mod chrome;
 mod firefox;
 mod cookiejar;
