@@ -22,6 +22,17 @@ xbrowser --os linux --browser chrome --domain vpn.msauth.com
 Installation
 ----
 
+### Prerequisites
+
+Currently building xbrowser requires the following dependencies
+
+
+```sh
+sudo apt install pkg-config libsecret-1-dev
+```
+
+After you have these set up, the rest is pretty easy:
+
 
 ```
 git clone https://github.com/EvanCarroll/xbrowser.git

@@ -8,12 +8,15 @@ authors = ["Evan Carroll <me@evancarroll.com>"]
 
 [dependencies]
 aes = "0.8.3"
+base64 = "0.21.4"
 cbc = "0.1.2"
 chrono = "0.4.31"
 cipher = "0.4.4"
 clap = { version = "4.4.6", features = ["derive", "env"] }
 derive_builder = "0.12.0"
+gio = "0.18.2"
 itertools = "0.11.0"
+libsecret = "0.4.0"
 num_enum = "0.7.0"
 pbkdf2 = "0.12.2"
 # rusqlite = "0.29.0"

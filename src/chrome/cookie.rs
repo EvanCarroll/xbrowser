@@ -7,15 +7,50 @@ use xbrowser::*;
 /// Rust port of GenerateEncryptionKey
 /// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;bpv=1;bpt=1
 // Can't be made const.. yet! https://github.com/rust-lang/rust/issues/57349
-fn get_key() -> [u8; 16] {
+fn get_key_v10() -> [u8; 16] {
+	const PASSWORD: &[u8; 7] = b"peanuts";
+	pbkdf2(PASSWORD)
+}
+
+/// Currently we only handle v11 key retreval on Linux
+// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/key_storage_libsecret.cc;l=17
+fn get_key_v11() -> Result<[u8; 16], CookieError> {
+	//let collection = libsecret::COLLECTION_DEFAULT;
+	let mut attributes = std::collections::HashMap::new();
+	attributes.insert("application", libsecret::SchemaAttributeType::String);
+	let schema = libsecret::Schema::new(
+		"chrome_libsecret_os_crypt_password_v2",
+		libsecret::SchemaFlags::DONT_MATCH_NAME,
+		attributes
+	);
+
+	let mut q = std::collections::HashMap::new();
+	q.insert("application", "chromium");
+
+	let cancellable = gio::Cancellable::new();
+	let lookup = libsecret::password_lookup_sync(Some(&schema), q, Some(&cancellable))
+		.map_err(|_| CookieError::LibSecret)?
+		.unwrap();
+
+	Ok(pbkdf2( lookup.as_bytes() ))
+}
+
+fn pbkdf2(password: &[u8]) -> [u8; 16] {
 	use pbkdf2::pbkdf2_hmac;
 	use sha1::Sha1;
-	const PASSWORD: &[u8; 7] = b"peanuts";
 	const SALT: &[u8; 9] = b"saltysalt";
 	const ITER: u32 = 1;
 	let mut key = [0u8; 16];
-	pbkdf2_hmac::<Sha1>(PASSWORD, SALT, ITER, &mut key);
+	pbkdf2_hmac::<Sha1>(password, SALT, ITER, &mut key);
 	key
+}
+
+fn base64decode(encoded: String) -> [u8; 16] {
+	assert!( encoded.len() < 32, "Encoded must be len 32 {:?}", encoded.len() );
+	use base64::{Engine as _, engine::general_purpose};
+	let mut decoded: [u8; 16] = [0;16];
+	general_purpose::STANDARD.decode_slice_unchecked(encoded, &mut decoded).unwrap();
+	decoded
 }
 
 // const VERSION_10_KEY: [u8;16] = get_key();
@@ -102,31 +137,43 @@ impl ChromeCookie {
 
 		match version.as_str() {
 			"v10" => {
-				let iv = [b' '; 16];
-				let mut buf = [0u8; 2048];
-				let len = data.len();
-				buf[..len].copy_from_slice(data);
-
-				type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
-				let pt = Aes128CbcDec::new( &get_key().into(), &iv.into() )
-					.decrypt_padded_mut::<NoPadding>(&mut buf).unwrap();
-				
-				let padding = pt[len-1] as usize;
-				let trim = &pt[..len - (pt[ len - padding] as usize) ];
-
-				let value = trim
-					.iter()
-					.map(|b| *b as char).collect::<String>();
-				
-				Ok( value.to_owned() )
+				chrome_decrypt( &get_key_v10(), data )
+			}
+			"v11" => {
+				chrome_decrypt( &get_key_v11()?, data )
 			}
 			other => Err(
-				CookieError::EncryptionError(other.to_string(), self.name.clone())
+				CookieError::ChromeUnsupportedEncryption(other.to_string())
 			)
 		}
 	}
 }
 
+fn chrome_decrypt( key: &[u8;16], data: &[u8] ) -> Result<String, CookieError> {
+	let plaintext = aes128_cbc_decrypt( key, data )?;
+	let trim = trim_padding( &plaintext, data.len() );
+	Ok( trim.iter().map(|b| *b as char).collect::<String>() )
+}
+
+// This returns a static buffer of 2048 bytes
+fn aes128_cbc_decrypt( key: &[u8;16], data: &[u8] ) -> Result<[u8;2048], CookieError> {
+	let iv = [b' '; 16];
+	let mut buf = [0u8; 2048];
+	buf[..data.len()].copy_from_slice(data);
+	type Aes128CbcDec = cbc::Decryptor<aes::Aes128>;
+	Aes128CbcDec::new( key.into(), &iv.into() )
+		.decrypt_padded_mut::<NoPadding>(&mut buf)
+		.map_err( |_| CookieError::Decryption )?;
+	Ok(buf)
+}
+
+/// Takes a padded buffer, and the length of the input ciphertext
+fn trim_padding<'a>( pt: &'a [u8;2048], cyphertext_len: usize ) -> &'a [u8] {
+	// The padding lengnth is stored in last byte
+	let padding = pt[cyphertext_len-1] as usize;
+	let len = cyphertext_len - padding;
+	&pt[..cyphertext_len - (pt[len] as usize) ]
+}
 
 impl TryFrom<sqlite::Row> for ChromeCookie {
 	type Error = CookieError;
