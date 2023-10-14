@@ -1,16 +1,28 @@
 use num_enum::{IntoPrimitive, FromPrimitive};
 use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
+use once_cell::sync::OnceCell;
 
 use xbrowser::*;
 
+
 /// Rust port of GenerateEncryptionKey
 /// https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/os_crypt_linux.cc;bpv=1;bpt=1
+/// ```
+/// assert!( get_key_v10(), CHROME_V10_KEY_LINUX_POSIX )
+/// ```
 // Can't be made const.. yet! https://github.com/rust-lang/rust/issues/57349
+#[allow(dead_code)]
 fn get_key_v10() -> [u8; 16] {
 	const PASSWORD: &[u8; 7] = b"peanuts";
 	pbkdf2(PASSWORD)
 }
+
+
+// It's safe to precalculate the v10 key since it's hard coded in the source
+static CHROME_V10_KEY_LINUX_POSIX: [u8;16] = [253, 98, 31, 229, 162, 180, 2, 83, 157, 250, 20, 124, 169, 39, 39, 120];
+static CHROME_V11_KEY_LINUX_POSIX: OnceCell<[u8;16]> = OnceCell::new();
+
 
 /// Currently we only handle v11 key retreval on Linux
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/key_storage_libsecret.cc;l=17
@@ -45,6 +57,7 @@ fn pbkdf2(password: &[u8]) -> [u8; 16] {
 	key
 }
 
+#[allow(dead_code)]
 fn base64decode(encoded: String) -> [u8; 16] {
 	assert!( encoded.len() < 32, "Encoded must be len 32 {:?}", encoded.len() );
 	use base64::{Engine as _, engine::general_purpose};
@@ -137,10 +150,11 @@ impl ChromeCookie {
 
 		match version.as_str() {
 			"v10" => {
-				chrome_decrypt( &get_key_v10(), data )
+				chrome_decrypt( &CHROME_V10_KEY_LINUX_POSIX, data )
 			}
 			"v11" => {
-				chrome_decrypt( &get_key_v11()?, data )
+				let key = CHROME_V11_KEY_LINUX_POSIX.get_or_try_init( || get_key_v11() )?;
+				chrome_decrypt( key, data )
 			}
 			other => Err(
 				CookieError::ChromeUnsupportedEncryption(other.to_string())

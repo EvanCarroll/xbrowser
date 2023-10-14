@@ -1256,6 +1256,7 @@ dependencies = [
  "itertools",
  "libsecret",
  "num_enum",
+ "once_cell",
  "pbkdf2",
  "rust-ini",
  "sha1",
