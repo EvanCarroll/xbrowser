@@ -19,10 +19,13 @@ fn get_key_v10() -> [u8; 16] {
 }
 
 
-// It's safe to precalculate the v10 key since it's hard coded in the source
+/// It's safe to precalculate the v10 key since it's hard coded in the source
+/// pbkdf2_hmac_sha1("peanuts", "saltysalt", 1)
 static CHROME_V10_KEY_LINUX_POSIX: [u8;16] = [253, 98, 31, 229, 162, 180, 2, 83, 157, 250, 20, 124, 169, 39, 39, 120];
-static CHROME_V11_KEY_LINUX_POSIX: OnceCell<[u8;16]> = OnceCell::new();
 
+/// A OnceCell wrapper for the v11 key. Chrome does not support rekeying. So we
+/// don't have to support rekeying in same execution
+static CHROME_V11_KEY_LINUX_POSIX: OnceCell<[u8;16]> = OnceCell::new();
 
 /// Currently we only handle v11 key retreval on Linux
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/key_storage_libsecret.cc;l=17
@@ -97,20 +100,21 @@ pub struct ChromeCookie {
 	pub name: String,
 	pub path: String,
 	pub value: Option<String>,
+	pub top_frame_site_key: Option<String>,
 	pub encrypted_value: Vec<u8>,
-	pub creation_utc: DateTime<Utc>,
-	pub last_access_utc: DateTime<Utc>,
-	pub last_update_utc: DateTime<Utc>,
 	pub has_expires: bool,
-	pub expires_utc: Option<DateTime<Utc>>,
 	pub source_port: u32,
+	pub source_scheme: CookieSourceScheme,
 	pub is_secure: bool,
 	pub is_httponly: bool,
 	pub is_persistent: bool,
 	pub is_same_party: bool,
 	pub priority: i64,
 	pub samesite: CookieSameSite,
-	pub source_scheme: CookieSourceScheme,
+	pub expires_utc: Option<DateTime<Utc>>,
+	pub creation_utc: DateTime<Utc>,
+	pub last_access_utc: DateTime<Utc>,
+	pub last_update_utc: DateTime<Utc>,
 }
 
 impl Cookie for ChromeCookie {
@@ -206,6 +210,7 @@ impl TryFrom<sqlite::Row> for ChromeCookie {
 		cb.source_scheme( (read_int(&row, "source_scheme")? as u8).into() );
 
 		// Store as Option where "" is None
+		cb.top_frame_site_key( Some(read_string(&row, "top_frame_site_key")?).filter(|s| !s.is_empty()) );
 		cb.value( Some(read_string(&row, "value")?).filter(|s| !s.is_empty()) );
 		cb.source_port( read_int(&row, "source_port")? as u32 );
 
