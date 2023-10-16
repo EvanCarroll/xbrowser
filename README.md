@@ -16,7 +16,20 @@ Synopsis
 --------
 
 ```shell
-xbrowser --os linux --browser chrome --domain vpn.msauth.com
+Usage: xbrowser [OPTIONS] --user <USER> <ACTION> <BROWSER> <COMMAND>
+
+Commands:
+  cookies  Decodes Cookies
+  help     Print this message or the help of the given subcommand(s)
+```
+
+For more information on `xbrowser` see `xbrowser --help` and `xbrowser export chrome cookies --help`
+
+
+Here is an example
+
+```
+xbrowser export chrome cookes vpn.msauth.com
 ```
 
 Installation

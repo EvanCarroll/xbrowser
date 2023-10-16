@@ -14,7 +14,7 @@ pub struct Chrome {
 }
 
 impl Chrome {
-	pub fn get_cookies(&self, domain: &str) -> CookieJar {
+	pub fn get_cookies_for_domain(&self, domain: &str) -> CookieJar {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
