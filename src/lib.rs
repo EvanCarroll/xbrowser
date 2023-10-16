@@ -1,3 +1,4 @@
+#![feature(inherent_associated_types)]
 use std::path::PathBuf;
 use clap::ValueEnum;
 use std::cmp::Ordering;
@@ -76,7 +77,6 @@ pub trait Cookie: std::fmt::Debug {
 	fn name(&self) -> String;	
 	fn value(&self) -> String;	
 }
-
 
 impl Eq for dyn Cookie {}
 

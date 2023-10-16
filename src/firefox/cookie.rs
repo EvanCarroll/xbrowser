@@ -1,8 +1,10 @@
 use chrono::{DateTime, offset::Utc};
+use serde::Serialize;
+use std::cmp;
 
 use xbrowser::*;
 
-#[derive(Debug, Builder, PartialEq, Eq)]
+#[derive(Debug, Builder, PartialEq, Eq, Serialize)]
 pub struct FirefoxCookie {
 	pub id: u64,
 	pub origin_attributes: String,
@@ -21,7 +23,7 @@ pub struct FirefoxCookie {
 	pub scheme_map: bool,
 }
 
-impl crate::Cookie for FirefoxCookie {
+impl Cookie for FirefoxCookie {
 	fn name (&self) -> String { self.name.clone() }
 	fn value (&self) -> String { self.value.clone() }
 }
@@ -65,7 +67,6 @@ impl TryFrom<&rusqlite::Row<'_>> for FirefoxCookie {
 	}
 }
 
-use std::cmp;
 impl PartialOrd for FirefoxCookie {
 	fn partial_cmp(&self, other: &Self ) -> Option<cmp::Ordering> {
 		Some(self.name().cmp( &other.name() ))

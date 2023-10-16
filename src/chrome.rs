@@ -14,7 +14,8 @@ pub struct Chrome {
 }
 
 impl Chrome {
-	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar, CookieError> {
+
+	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<cookie::ChromeCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
@@ -28,7 +29,7 @@ impl Chrome {
 		"##;
 
 		let mut statement = con.prepare(Q)?;
-		let mut jar = CookieJar::default();
+		let mut jar : CookieJar<cookie::ChromeCookie> = CookieJar::default();
 		let cookies = statement.query_and_then([domain], |row| {
 			row.try_into()
 		} )?;

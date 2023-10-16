@@ -1,7 +1,9 @@
-use num_enum::{IntoPrimitive, FromPrimitive};
-use chrono::{DateTime, offset::Utc};
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
+use chrono::{DateTime, offset::Utc};
+use num_enum::{IntoPrimitive, FromPrimitive};
 use once_cell::sync::OnceCell;
+use serde::Serialize;
+use std::cmp;
 
 use xbrowser::*;
 
@@ -71,7 +73,7 @@ fn base64decode(encoded: String) -> [u8; 16] {
 
 // const VERSION_10_KEY: [u8;16] = get_key();
 
-#[derive(Debug, Clone, IntoPrimitive, FromPrimitive)]
+#[derive(Debug, Clone, IntoPrimitive, FromPrimitive, Eq, PartialEq, Serialize)]
 #[repr(u8)]
 pub enum CookieSourceScheme {
 	#[num_enum(default)]
@@ -85,7 +87,7 @@ pub enum CookieSourceScheme {
 // information about same site cookie restrictions.
 // Note: Don't renumber, as these values are persisted to a database.
 #[repr(i8)]
-#[derive(Debug, Clone, IntoPrimitive, FromPrimitive)]
+#[derive(Debug, Clone, IntoPrimitive, FromPrimitive, Eq, PartialEq, Serialize)]
 pub enum CookieSameSite {
 	#[num_enum(default)]
 	Unspecified = -1,
@@ -95,7 +97,7 @@ pub enum CookieSameSite {
 	// Reserved 3 (was EXTENDED_MODE), next number is 4.
 }
 
-#[derive(Debug, Builder)]
+#[derive(Debug, Builder, PartialEq, Eq, Serialize)]
 pub struct ChromeCookie {
 	pub name: String,
 	pub path: String,
@@ -130,6 +132,17 @@ impl Cookie for ChromeCookie {
 					}
 				} ).expect("Error decrypting to value")
 			)
+	}
+}
+
+impl PartialOrd for ChromeCookie {
+	fn partial_cmp(&self, other: &Self ) -> Option<cmp::Ordering> {
+		Some(self.name().cmp( &other.name() ))
+	}
+}
+impl Ord for ChromeCookie {
+	fn cmp(&self, other: &Self ) -> cmp::Ordering {
+		self.name().cmp( &other.name() )
 	}
 }
 

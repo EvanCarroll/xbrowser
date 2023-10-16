@@ -15,11 +15,12 @@ pub struct Firefox {
 }
 
 impl Firefox {
-	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar, CookieError> {
+	
+	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<cookie::FirefoxCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("cookies.sqlite");
 
-		let con = rusqlite::Connection::open(&path)
+		let con = rusqlite::Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
 			.unwrap();
 
 		const Q: &'static str = r##"
@@ -29,7 +30,7 @@ impl Firefox {
 		"##;
 		
 		let mut statement = con.prepare(Q)?;
-		let mut jar = CookieJar::default();
+		let mut jar : CookieJar<cookie::FirefoxCookie> = CookieJar::default();
 		let cookies = statement.query_and_then([domain], |row| {
 			row.try_into()
 		} )?;

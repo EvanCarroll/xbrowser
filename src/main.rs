@@ -1,3 +1,4 @@
+#![feature(inherent_associated_types)]
 #![feature(split_array,never_type)]
 #[macro_use]
 extern crate derive_builder;
@@ -15,6 +16,9 @@ use xbrowser::*;
 struct Cli {
 	#[arg(value_enum)]
 	action: ExportImport,
+	
+	#[arg(value_enum, short, default_value="plain-text")]
+	format: ExportFormat,
 
 	#[arg(value_enum, long, default_value = "linux")]
 	/// Browser operating system which created the profile
@@ -39,6 +43,13 @@ struct Cli {
 	#[command(subcommand)]
 	command: Commands,
 
+}
+
+#[derive(Debug, Default, Clone, ValueEnum)]
+enum ExportFormat {
+	#[default]
+	PlainText,
+	Json,
 }
 
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/key_storage_util_linux.h;drc=f5bdc89c7395ed24f1b8d196a3bdd6232d5bf771;bpv=1;bpt=1;l=20
@@ -115,6 +126,7 @@ fn main() {
 	match &args.command {
 		Commands::Cookies { domain, .. } => {
 			let profile = args.profile.clone();
+			let export_format = args.format.clone();
 			let path_config = args.path_config.clone();
 
 			match env.browser {
@@ -129,7 +141,11 @@ fn main() {
 					match domain {
 						Some(domain) => {
 							let jar = browser.get_cookies_for_domain( domain ).unwrap();
-							println!("{}", jar)
+
+							match export_format {
+								ExportFormat::Json => println!("{}", serde_json::to_string(&jar).unwrap() ),
+								ExportFormat::PlainText => println!("{}", &jar)
+							}
 						}
 						_ => todo!("Support dumping database")
 					}
@@ -142,7 +158,11 @@ fn main() {
 					match domain {
 						Some(domain) => {
 							let jar = browser.get_cookies_for_domain( domain ).unwrap();
-							println!("{}", jar)
+
+							match export_format {
+								ExportFormat::Json => println!("{}", serde_json::to_string(&jar).unwrap() ),
+								ExportFormat::PlainText => println!("{}", &jar)
+							}
 						}
 						_ => todo!("Support dumping database")
 					}
