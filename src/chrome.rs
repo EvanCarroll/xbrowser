@@ -14,11 +14,11 @@ pub struct Chrome {
 }
 
 impl Chrome {
-	pub fn get_cookies_for_domain(&self, domain: &str) -> CookieJar {
+	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar, CookieError> {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
-		let con = sqlite::Connection::open(&path)
+		let con = rusqlite::Connection::open(&path)
 			.unwrap();
 
 		const Q: &'static str = r##"
@@ -27,18 +27,18 @@ impl Chrome {
 			WHERE host_key = ?;
 		"##;
 
-		let mut statement = con.prepare(Q)
-			.expect(&format!("Error preparing statement with {:?}", &path.clone().as_os_str()));
-		statement.bind((1,domain)).unwrap();
-
+		let mut statement = con.prepare(Q)?;
 		let mut jar = CookieJar::default();
-		for row in statement.iter() {
-			let row = row.unwrap();
-			let cookie: cookie::ChromeCookie = row.try_into().unwrap();
+		let cookies = statement.query_and_then([domain], |row| {
+			row.try_into()
+		} )?;
+
+		for cookie in cookies {
+			let cookie: cookie::ChromeCookie = cookie?;
 			jar.add_cookie(cookie.name.clone(), Box::new(cookie));
 		}
 
-		jar
+		Ok(jar)
 	}
 
 

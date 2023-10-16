@@ -128,7 +128,7 @@ fn main() {
 					let browser = builder.build().unwrap();
 					match domain {
 						Some(domain) => {
-							let jar = browser.get_cookies_for_domain( domain );
+							let jar = browser.get_cookies_for_domain( domain ).unwrap();
 							println!("{}", jar)
 						}
 						_ => todo!("Support dumping database")
@@ -141,7 +141,7 @@ fn main() {
 					let browser = builder.build().unwrap();
 					match domain {
 						Some(domain) => {
-							let jar = browser.get_cookies_for_domain( domain );
+							let jar = browser.get_cookies_for_domain( domain ).unwrap();
 							println!("{}", jar)
 						}
 						_ => todo!("Support dumping database")

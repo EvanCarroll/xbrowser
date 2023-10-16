@@ -193,12 +193,12 @@ fn trim_padding<'a>( pt: &'a [u8;2048], cyphertext_len: usize ) -> &'a [u8] {
 	&pt[..cyphertext_len - (pt[len] as usize) ]
 }
 
-impl TryFrom<sqlite::Row> for ChromeCookie {
+impl TryFrom<&rusqlite::Row<'_>> for ChromeCookie {
 	type Error = CookieError;
-	fn try_from( row: sqlite::Row ) -> Result<ChromeCookie, Self::Error> {
+	fn try_from( row: &rusqlite::Row ) -> Result<ChromeCookie, Self::Error> {
 		let mut cb = ChromeCookieBuilder::default();
-		cb.name( row.read::<&str, _>("name").to_string() );
-		cb.encrypted_value( read_vecu8(&row, "encrypted_value") );
+		cb.name( read_string(&row, "name")? );
+		cb.encrypted_value( read_vecu8(&row, "encrypted_value")? );
 		cb.path( read_string(&row, "path")? );
 		cb.is_secure( read_bool(&row, "is_secure")? );
 		cb.is_httponly( read_bool(&row, "is_httponly")? );

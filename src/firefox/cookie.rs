@@ -26,9 +26,9 @@ impl crate::Cookie for FirefoxCookie {
 	fn value (&self) -> String { self.value.clone() }
 }
 
-impl TryFrom<sqlite::Row> for FirefoxCookie {
-	type Error = xbrowser::CookieError;
-	fn try_from( row: sqlite::Row ) -> Result<FirefoxCookie, Self::Error> {
+impl TryFrom<&rusqlite::Row<'_>> for FirefoxCookie {
+	type Error = CookieError;
+	fn try_from( row: &rusqlite::Row ) -> Result<FirefoxCookie, Self::Error> {
 		let mut cb = FirefoxCookieBuilder::default();
 		cb.id( read_int(&row, "id")? as u64 );
 		cb.origin_attributes( read_string(&row, "originAttributes")? );
@@ -52,7 +52,7 @@ impl TryFrom<sqlite::Row> for FirefoxCookie {
 			let ts = from_epoch_microseconds(msecs).unwrap();
 			cb.creation_time( ts );
 		}
-		cb.is_secure( read_bool(&row, "is_Secure")? );
+		cb.is_secure( read_bool(&row, "isSecure")? );
 		cb.is_http_only( read_bool(&row, "isHttpOnly")? );
 		cb.in_browser_element( read_bool(&row, "inBrowserElement")? );
 		cb.same_site( read_bool(&row, "sameSite")? );

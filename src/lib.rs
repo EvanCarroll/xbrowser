@@ -31,34 +31,45 @@ impl Env {
 	}
 }
 
-pub fn read_bool( row: &sqlite::Row, col: &str ) -> Result<bool, CookieError> {
-	let val = row.try_read::<i64, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
-	Ok(val != 0)
-}
-
-pub fn read_int( row: &sqlite::Row, col: &str ) -> Result<i64, CookieError> {
-	let val = row.try_read::<i64, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
+pub fn read_bool( row: &rusqlite::Row, col: &str ) -> Result<bool, CookieError> {
+	let val: bool = row.get(col)?;
 	Ok(val)
 }
 
-pub fn read_string( row: &sqlite::Row, col: &str ) -> Result<String, CookieError> {
-	let val = row.try_read::<&str, _>(col).map_err( |e| CookieError::SqliteInterface(e) )?;
-	Ok( val.to_string() )
+pub fn read_int( row: &rusqlite::Row, col: &str ) -> Result<i64, CookieError> {
+	let val: i64 = row.get(col)?;
+	Ok(val)
 }
 
-pub fn read_vecu8( row: &sqlite::Row, col: &str ) -> Vec<u8> {
-	row[col].clone().try_into().unwrap()
+pub fn read_string( row: &rusqlite::Row, col: &str ) -> Result<String, CookieError> {
+	let val: String = row.get(col)?;
+	Ok( val )
 }
 
-#[derive(Debug)]
+pub fn read_vecu8( row: &rusqlite::Row, col: &str ) -> Result<Vec<u8>, CookieError> {
+	let val: Vec<u8> = row.get(col)?;
+	Ok( val )
+}
+
+use thiserror::Error;
+#[derive(Error, Debug)]
 pub enum CookieError {
+	#[error("Can not decrypt {0}")]
 	NotEncrypted(String),
+	#[error("No value for key {0}")]
 	NoValue(String),
+	
+	#[error("Decryption error")]
 	Decryption,
+
+	#[error("Unsupported encryption {0}")]
 	ChromeUnsupportedEncryption(String),
-	Egress,
-	SqliteInterface(sqlite::Error),
+
+	#[error("LibSecret")]
 	LibSecret,
+
+	#[error("SQLite")]
+	RuSqlite(#[from] rusqlite::Error),
 }
 
 pub trait Cookie: std::fmt::Debug {

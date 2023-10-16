@@ -3,12 +3,17 @@
 
 Read your browsers cookies from the command line! Allow easy session jacking
 and integration between the browser and headless tooling. This is useful when
-authentication is done online and requires JavaScript.
+authentication is done online and requires JavaScript. Also session sharing
+between browsers.
 
 Currently we have the ability to 
 
-* Decode v10 Chrome Cookies as used in Linux
-* Dump Firefox cookies in Linux
+* Linux support:
+	* Chrome/Chromium
+		* Decode v10 Chrome Cookies
+		* Decode v11 Chrome Cookies (with the gnome-libsecret store)
+	* Firefox cookies
+		* Dump Firefox Cookies
 
 This will be expanded to support all browsers, on Windows, Linux, and OSX.
 
@@ -23,7 +28,10 @@ Commands:
   help     Print this message or the help of the given subcommand(s)
 ```
 
-For more information on `xbrowser` see `xbrowser --help` and `xbrowser export chrome cookies --help`
+For more information on `xbrowser` see,
+
+* `xbrowser --help`
+* `xbrowser export chrome cookies --help`
 
 
 Here is an example
