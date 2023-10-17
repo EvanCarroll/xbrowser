@@ -1,4 +1,3 @@
-#![feature(inherent_associated_types)]
 use std::path::PathBuf;
 use clap::ValueEnum;
 use std::cmp::Ordering;

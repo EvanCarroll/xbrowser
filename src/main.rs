@@ -1,4 +1,3 @@
-#![feature(inherent_associated_types)]
 #![feature(split_array,never_type)]
 #[macro_use]
 extern crate derive_builder;

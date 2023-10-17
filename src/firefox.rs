@@ -1,10 +1,8 @@
 use std::path::PathBuf;
+
 use crate::cookiejar::CookieJar;
-use cookie::*;
-use rusqlite::{params, Connection, Result};
-
-
 mod cookie;
+use cookie::*;
 use xbrowser::*;
 
 #[derive(Debug, Clone, Builder)]
@@ -16,7 +14,7 @@ pub struct Firefox {
 
 impl Firefox {
 	
-	pub fn get_all_cookies(&self) -> Result<Vec<cookie::FirefoxCookie>, CookieError> {
+	pub fn get_all_cookies(&self) -> Result<Vec<FirefoxCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("cookies.sqlite");
 
@@ -46,7 +44,7 @@ impl Firefox {
 		Ok(vec)
 	}
 	
-	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<cookie::FirefoxCookie>, CookieError> {
+	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<FirefoxCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("cookies.sqlite");
 
@@ -63,13 +61,13 @@ impl Firefox {
 		"##;
 		
 		let mut statement = con.prepare(Q)?;
-		let mut jar : CookieJar<cookie::FirefoxCookie> = CookieJar::default();
+		let mut jar : CookieJar<FirefoxCookie> = CookieJar::default();
 		let cookies = statement.query_and_then([domain], |row| {
 			row.try_into()
 		} )?;
 
 		for cookie in cookies {
-			let cookie: cookie::FirefoxCookie = cookie?;
+			let cookie: FirefoxCookie = cookie?;
 			jar.add_cookie(cookie.name.clone(), Box::new(cookie));
 		}
 

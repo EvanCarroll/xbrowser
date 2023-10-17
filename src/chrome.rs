@@ -1,8 +1,9 @@
 use std::path::PathBuf;
-use crate::cookiejar::CookieJar;
 
-use xbrowser::*;
+use crate::cookiejar::CookieJar;
 mod cookie;
+use cookie::*;
+use xbrowser::*;
 
 #[derive(Debug, Clone, Builder)]
 pub struct Chrome {
@@ -15,7 +16,7 @@ pub struct Chrome {
 
 impl Chrome {
 	
-	pub fn get_all_cookies(&self) -> Result<Vec<cookie::ChromeCookie>, CookieError> {
+	pub fn get_all_cookies(&self) -> Result<Vec<ChromeCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
@@ -34,14 +35,14 @@ impl Chrome {
 
 		let mut vec = Vec::new();
 		for cookie in cookies {
-			let cookie: cookie::ChromeCookie = cookie?;
+			let cookie: ChromeCookie = cookie?;
 			vec.push(cookie);
 		}
 
 		Ok(vec)
 	}
 
-	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<cookie::ChromeCookie>, CookieError> {
+	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<ChromeCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
@@ -61,7 +62,7 @@ impl Chrome {
 		} )?;
 
 		for cookie in cookies {
-			let cookie: cookie::ChromeCookie = cookie?;
+			let cookie: ChromeCookie = cookie?;
 			jar.add_cookie(cookie.name.clone(), Box::new(cookie));
 		}
 
