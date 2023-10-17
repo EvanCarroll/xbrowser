@@ -20,13 +20,17 @@ impl Firefox {
 		let mut path = self.path_profile();
 		path.push("cookies.sqlite");
 
-		let con = rusqlite::Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
-			.unwrap();
+		let path = format!("file://{}?mode=ro&immutable=1", &path.display());
+		let con = rusqlite::Connection::open_with_flags(
+			path,
+			rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_URI
+		).unwrap();
 
 		const Q: &'static str = r##"
 			SELECT *
 			FROM moz_cookies;
 		"##;
+
 		
 		let mut statement = con.prepare(Q)?;
 		let cookies = statement.query_and_then([], |row| {
@@ -46,8 +50,11 @@ impl Firefox {
 		let mut path = self.path_profile();
 		path.push("cookies.sqlite");
 
-		let con = rusqlite::Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
-			.unwrap();
+		let path = format!("file://{}?mode=ro&immutable=1", &path.display());
+		let con = rusqlite::Connection::open_with_flags(
+			path,
+			rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_URI
+		).unwrap();
 
 		const Q: &'static str = r##"
 			SELECT *
