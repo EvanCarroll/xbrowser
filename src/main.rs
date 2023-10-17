@@ -122,7 +122,7 @@ fn main() {
 		user: args.user,
 		os: args.os,
 	};
-
+	
 	match &args.command {
 		Commands::Cookies { domain, .. } => {
 			let profile = args.profile.clone();
@@ -147,7 +147,13 @@ fn main() {
 								ExportFormat::PlainText => println!("{}", &jar)
 							}
 						}
-						_ => todo!("Support dumping database")
+						None => {
+							let vec = browser.get_all_cookies().unwrap();
+							match export_format {
+								ExportFormat::Json => println!("{}", serde_json::to_string(&vec).unwrap() ),
+								_ => panic!("We only support dumping in JSON")
+							}
+						}
 					}
 				}
 				Browser::Firefox => {
@@ -164,7 +170,13 @@ fn main() {
 								ExportFormat::PlainText => println!("{}", &jar)
 							}
 						}
-						_ => todo!("Support dumping database")
+						None => {
+							let vec = browser.get_all_cookies().unwrap();
+							match export_format {
+								ExportFormat::Json => println!("{}", serde_json::to_string(&vec).unwrap() ),
+								_ => panic!("We only support dumping in JSON")
+							}
+						}
 					}
 				}
 				_ => todo!( "Chill cowboy, the requested browser isn't implemented yet" )

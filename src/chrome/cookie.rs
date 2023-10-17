@@ -116,7 +116,7 @@ pub struct ChromeCookie {
 	pub expires_utc: Option<DateTime<Utc>>,
 	pub creation_utc: DateTime<Utc>,
 	pub last_access_utc: DateTime<Utc>,
-	pub last_update_utc: DateTime<Utc>,
+	pub last_update_utc: Option<DateTime<Utc>>,
 }
 
 impl Cookie for ChromeCookie {
@@ -239,7 +239,7 @@ impl TryFrom<&rusqlite::Row<'_>> for ChromeCookie {
 		
 		{
 			let ts = read_int(&row, "last_update_utc")?;
-			cb.last_update_utc( from_epoch(ts).unwrap() );
+			cb.last_update_utc( from_epoch(ts) );
 		}
 		
 		{

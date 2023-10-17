@@ -14,12 +14,38 @@ pub struct Chrome {
 }
 
 impl Chrome {
+	
+	pub fn get_all_cookies(&self) -> Result<Vec<cookie::ChromeCookie>, CookieError> {
+		let mut path = self.path_profile();
+		path.push("Cookies");
+
+		let con = rusqlite::Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+			.unwrap();
+
+		const Q: &'static str = r##"
+			SELECT *
+			FROM cookies;
+		"##;
+
+		let mut statement = con.prepare(Q)?;
+		let cookies = statement.query_and_then([], |row| {
+			row.try_into()
+		} )?;
+
+		let mut vec = Vec::new();
+		for cookie in cookies {
+			let cookie: cookie::ChromeCookie = cookie?;
+			vec.push(cookie);
+		}
+
+		Ok(vec)
+	}
 
 	pub fn get_cookies_for_domain(&self, domain: &str) -> Result<CookieJar<cookie::ChromeCookie>, CookieError> {
 		let mut path = self.path_profile();
 		path.push("Cookies");
 
-		let con = rusqlite::Connection::open(&path)
+		let con = rusqlite::Connection::open_with_flags(&path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
 			.unwrap();
 
 		const Q: &'static str = r##"
