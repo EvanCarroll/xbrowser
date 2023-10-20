@@ -1,6 +1,7 @@
 use aes::cipher::{block_padding:: NoPadding, BlockDecryptMut, KeyIvInit};
 use chrono::{DateTime, offset::Utc};
 use num_enum::{IntoPrimitive, FromPrimitive};
+#[cfg(feature = "libsecret")]
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::cmp;
@@ -20,17 +21,18 @@ fn get_key_v10() -> [u8; 16] {
 	pbkdf2(PASSWORD)
 }
 
-
 /// It's safe to precalculate the v10 key since it's hard coded in the source
 /// pbkdf2_hmac_sha1("peanuts", "saltysalt", 1)
 static CHROME_V10_KEY_LINUX_POSIX: [u8;16] = [253, 98, 31, 229, 162, 180, 2, 83, 157, 250, 20, 124, 169, 39, 39, 120];
 
 /// A OnceCell wrapper for the v11 key. Chrome does not support rekeying. So we
 /// don't have to support rekeying in same execution
+#[cfg(feature = "libsecret")]
 static CHROME_V11_KEY_LINUX_POSIX: OnceCell<[u8;16]> = OnceCell::new();
 
 /// Currently we only handle v11 key retreval on Linux
 // https://source.chromium.org/chromium/chromium/src/+/main:components/os_crypt/sync/key_storage_libsecret.cc;l=17
+#[cfg(feature = "libsecret")]
 fn get_key_v11() -> Result<[u8; 16], CookieError> {
 	//let collection = libsecret::COLLECTION_DEFAULT;
 	let mut attributes = std::collections::HashMap::new();
@@ -97,10 +99,36 @@ pub enum CookieSameSite {
 	// Reserved 3 (was EXTENDED_MODE), next number is 4.
 }
 
+
+// 2023-10-17 sync with Chrome 117
+// Schema copied manually w/ sqlitebrowser
+//
+// CREATE TABLE cookies(
+// 	creation_utc INTEGER NOT NULL,
+// 	host_key TEXT NOT NULL,
+// 	top_frame_site_key TEXT NOT NULL,
+// 	name TEXT NOT NULL,
+// 	value TEXT NOT NULL,
+// 	encrypted_value BLOB NOT NULL,
+// 	path TEXT NOT NULL,
+// 	expires_utc INTEGER NOT NULL,
+// 	is_secure INTEGER NOT NULL,
+// 	is_httponly INTEGER NOT NULL,
+// 	last_access_utc INTEGER NOT NULL,
+// 	has_expires INTEGER NOT NULL,
+// 	is_persistent INTEGER NOT NULL,
+// 	priority INTEGER NOT NULL,
+// 	samesite INTEGER NOT NULL,
+// 	source_scheme INTEGER NOT NULL,
+// 	source_port INTEGER NOT NULL,
+// 	is_same_party INTEGER NOT NULL,
+// 	last_update_utc INTEGER NOT NULL
+// )
 #[derive(Debug, Builder, PartialEq, Eq, Serialize)]
 pub struct ChromeCookie {
 	pub name: String,
 	pub path: String,
+	pub host_key: String,
 	pub value: Option<String>,
 	pub top_frame_site_key: Option<String>,
 	pub encrypted_value: Vec<u8>,
@@ -116,6 +144,7 @@ pub struct ChromeCookie {
 	pub expires_utc: Option<DateTime<Utc>>,
 	pub creation_utc: DateTime<Utc>,
 	pub last_access_utc: DateTime<Utc>,
+	/// Reads 0 when not updated, store as None
 	pub last_update_utc: Option<DateTime<Utc>>,
 }
 
@@ -169,6 +198,7 @@ impl ChromeCookie {
 			"v10" => {
 				chrome_decrypt( &CHROME_V10_KEY_LINUX_POSIX, data )
 			}
+			#[cfg(feature = "libsecret")]
 			"v11" => {
 				let key = CHROME_V11_KEY_LINUX_POSIX.get_or_try_init( || get_key_v11() )?;
 				chrome_decrypt( key, data )
@@ -210,6 +240,7 @@ impl TryFrom<&rusqlite::Row<'_>> for ChromeCookie {
 	type Error = CookieError;
 	fn try_from( row: &rusqlite::Row ) -> Result<ChromeCookie, Self::Error> {
 		let mut cb = ChromeCookieBuilder::default();
+		cb.host_key( read_string(&row, "host_key")? );
 		cb.name( read_string(&row, "name")? );
 		cb.encrypted_value( read_vecu8(&row, "encrypted_value")? );
 		cb.path( read_string(&row, "path")? );
